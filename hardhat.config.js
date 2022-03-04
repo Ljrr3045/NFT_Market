@@ -29,7 +29,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.MAINNET_URL,
-        blockNumber: 11095000
+        blockNumber: 14316371
       }
     }
   },
@@ -38,4 +38,9 @@ module.exports = {
       rinkeby: process.env.ETHERSCAN_API_KEY
     }
   },
+  gasReporter: {
+    enabled: true,
+    currency: 'USD',
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+  }
 };
