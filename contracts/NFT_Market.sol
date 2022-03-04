@@ -75,6 +75,8 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
 
         uint tokensAvailable = IERC1155(_tokenAdrress).balanceOf(msg.sender, _tokenId);
 
+        require(tokensAvailable > 0, "The seller not are owner of tokens");
+
         for(uint i=0; i < sellerAcount[msg.sender].length; i++){
             if(sellerAcount[msg.sender][i].token == _tokenAdrress){
                 if(sellerAcount[msg.sender][i].tokenId == _tokenId){
@@ -87,13 +89,21 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         _;
     }
 
+    modifier confirmDates(address _tokenAdrress, uint _amountOfToken, uint _deadline,  uint _priceOfSale){
+        require(_tokenAdrress != address(0), "Date is invalidid");
+        require(_amountOfToken > 0, "Date is invalidid");
+        require(_deadline > 0, "Date is invalidid");
+        require(_priceOfSale > 0, "Date is invalidid");
+        _;
+    }
+
     modifier saleExist(uint _saleID){
         require(saleData[_saleID].exist, "This order for sale no exist");
         _;
     }
     
     function cont() public {
-        require (initContract == false);
+        require (initContract == false, "This contract are init");
 
         owner = msg.sender;
         _setupRole("Owner", msg.sender);
@@ -110,18 +120,20 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         uint _amountOfToken, 
         uint _deadline, 
         uint _priceOfSale
-        ) 
+        )
+        confirmDates(
+            _tokenAdrress,
+            _amountOfToken,
+            _deadline,
+            _priceOfSale
+        )
         evitRepublication(
-        _tokenAdrress, 
-        _tokenId, 
-        _amountOfToken
+            _tokenAdrress, 
+            _tokenId, 
+            _amountOfToken
         ) 
-        public {
-        require(_tokenAdrress != address(0));
-        require(_amountOfToken > 0);
-        require(_deadline > 0);
-        require(_priceOfSale > 0);
-
+        public{
+    
         _deadline += block.timestamp;
         _IdOfSale++;
 
@@ -144,7 +156,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
 
         Data memory token = saleData[saleID];
         uint finalPriceToken = (_calculateCostInToken(priceInTokenEth(), token.priceOfSale) * (10**18));
-        require (msg.value >= finalPriceToken);
+        require (msg.value >= finalPriceToken, "Pay is not enaugh");
 
         if(msg.value > finalPriceToken){
             uint change = msg.value - finalPriceToken;
@@ -209,7 +221,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
     function sellerDelateSale (uint saleID) public saleExist(saleID){
 
         Data memory token = saleData[saleID];
-        require (msg.sender == token.seller);
+        require (msg.sender == token.seller, "Not be owner of sale");
         _delateSale(saleID);
 
         emit canceling(msg.sender, saleID, "Sale canceled");
@@ -217,7 +229,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
 
     function modificateFee (uint newFee) public onlyRole("Admin"){
 
-        require ( newFee > 0 && newFee < 100 );
+        require ( newFee > 0 && newFee < 100, "This % not is valid" );
         feeAmount = newFee;
     }
 
