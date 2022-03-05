@@ -16,10 +16,12 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
     uint public feeAmount;
     uint internal _IdOfSale;
 
-    enum TipeERC {Dai, Link}
+    enum TipeERC {Dai, Link, Eth}
 
     mapping (uint => Data) public saleData;
     mapping (address => sellerRegist[]) public sellerAcount;
+
+//struc
 
     struct Data {
         address seller;
@@ -36,7 +38,10 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         address token;
         uint tokenId;
         uint amountOfToken;
+        uint saleId;
     }
+
+//event
 
     event selling (
         address _seller, 
@@ -62,11 +67,12 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         string _data
     );
 
+//modifier
+
     modifier timeOfBuy(uint _saleID){
 
         if(block.timestamp > saleData[_saleID].deadline){
-        _delateSale(_saleID);
-        revert("The time for buy this token ended");
+            revert("The time for buy this token ended");
         }
         _;
     }
@@ -101,6 +107,8 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         require(saleData[_saleID].exist, "This order for sale no exist");
         _;
     }
+
+//function
     
     function cont() public {
         require (initContract == false, "This contract are init");
@@ -147,7 +155,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
             true
         );
 
-        sellerAcount[msg.sender].push(sellerRegist(_tokenAdrress,_tokenId,_amountOfToken));
+        sellerAcount[msg.sender].push(sellerRegist(_tokenAdrress,_tokenId,_amountOfToken, _IdOfSale));
 
         emit selling(msg.sender,_IdOfSale,_tokenAdrress,_tokenId,_amountOfToken,_priceOfSale,"Posted sale");
     }
@@ -155,7 +163,8 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
     function buyTokenWithEth (uint saleID) public payable saleExist(saleID) timeOfBuy(saleID){
 
         Data memory token = saleData[saleID];
-        uint finalPriceToken = (_calculateCostInToken(priceInTokenEth(), token.priceOfSale) * (10**18));
+        uint finalPriceToken = _calculateCostInToken(priceInTokenEth(), token.priceOfSale, TipeERC.Eth);
+        require(finalPriceToken > 0, "This price in token not is valid for buy");
         require (msg.value >= finalPriceToken, "Pay is not enaugh");
 
         if(msg.value > finalPriceToken){
@@ -166,6 +175,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         IERC1155(token.tokenAdrress).
         safeTransferFrom(token.seller, msg.sender, token.tokenId, token.amountOfToken,"");
         _delateSale(saleID);
+        _delateSellerAcount(saleID, token.seller);
 
         uint payFee = _calculateFee(finalPriceToken);
         payable(owner).transfer(payFee);
@@ -180,7 +190,9 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         Data memory token = saleData[saleID];
         if(_TipeERC == TipeERC.Dai){
 
-            uint finalPriceToken = _calculateCostInToken(priceInTokenDai(), token.priceOfSale);
+            uint finalPriceToken = _calculateCostInToken(priceInTokenDai(), token.priceOfSale, TipeERC.Dai);
+            require(finalPriceToken > 0, "This price in token not is valid for buy");
+
             uint payFee = _calculateFee(finalPriceToken);
             finalPriceToken -= payFee;
 
@@ -194,12 +206,15 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
             IERC1155(token.tokenAdrress).
             safeTransferFrom(token.seller, msg.sender, token.tokenId, token.amountOfToken,"");
             _delateSale(saleID);
+            _delateSellerAcount(saleID, token.seller);
 
             emit buying(msg.sender, token.saleId, token.seller, token.priceOfSale, "Bought with DAI");
 
         }else{
 
-            uint finalPriceToken = _calculateCostInToken(priceInTokenDai(), token.priceOfSale);
+            uint finalPriceToken = _calculateCostInToken(priceInTokenLink(), token.priceOfSale, TipeERC.Link);
+            require(finalPriceToken > 0, "This price in token not is valid for buy");
+
             uint payFee = _calculateFee(finalPriceToken);
             finalPriceToken -= payFee;
 
@@ -213,6 +228,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
             IERC1155(token.tokenAdrress).
             safeTransferFrom(token.seller, msg.sender, token.tokenId, token.amountOfToken,"");
             _delateSale(saleID);
+            _delateSellerAcount(saleID, token.seller);
 
             emit buying(msg.sender, token.saleId, token.seller, token.priceOfSale, "Bought with LINK");
         }
@@ -223,6 +239,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         Data memory token = saleData[saleID];
         require (msg.sender == token.seller, "Not be owner of sale");
         _delateSale(saleID);
+        _delateSellerAcount(saleID, token.seller);
 
         emit canceling(msg.sender, saleID, "Sale canceled");
     }
@@ -233,10 +250,18 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         feeAmount = newFee;
     }
 
-    function _calculateCostInToken(uint _priceToken, uint _priceSale) internal pure returns (uint){
+//internal
+
+    function _calculateCostInToken(uint _priceToken, uint _priceSale, TipeERC _tipeERC) internal pure returns (uint){
 
         uint totalAmount;
-        totalAmount = _priceSale / _priceToken;
+
+        if(_tipeERC == TipeERC.Eth){
+            totalAmount = ((_priceSale * (10**8))/ _priceToken) * (10**10);
+        }else{
+            totalAmount = _priceSale/_priceToken;
+        }
+
         return totalAmount;
     }
 
@@ -250,4 +275,18 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         return payFee;
     }
 
+    function _delateSellerAcount(uint _Id, address sellerAddress) internal {
+
+        for(uint i = 0; i < sellerAcount[sellerAddress].length; i++){
+            if(_Id == sellerAcount[sellerAddress][i].saleId){
+
+                for(uint j = i; j < sellerAcount[sellerAddress].length - 1; j++){
+                    sellerAcount[sellerAddress][j] = sellerAcount[sellerAddress][j+1];
+                }
+                
+                sellerAcount[sellerAddress].pop();
+                break;
+            }
+        }
+    }
 }
