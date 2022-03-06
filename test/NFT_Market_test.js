@@ -217,7 +217,7 @@ describe("NFT_Market", async ()=> {
                 let newBalanceSeller = await ethers.provider.getBalance(seller1.address);
 
                 expect(newBalanceOwner - balanceOwner).to.equal(356506199392256); //aprox 356506200000000 for gasFee
-                expect(newBalanceSeller - balanceSeller).to.equal(35125913459580930); //aprox 35294113800000000 for gasFee
+                expect(newBalanceSeller - balanceSeller).to.equal(35154225159454720); //aprox 35294113800000000 for gasFee
             });
 
             it("The sale should be removed", async ()=> {

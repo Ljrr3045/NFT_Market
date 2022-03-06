@@ -18,5 +18,13 @@
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.7.20"
+  },
+  "scripts": {
+    "compile": "yarn hardhat compile",
+    "test": " yarn hardhat test",
+    "scriptDeployProxy": "yarn hardhat run --network hardhat scripts/NftMarketProxy.js",
+    "scriptUpdate": "yarn hardhat run --network hardhat scripts/UpDateProxy.js",
+    "scriptPriceToken": "yarn hardhat run --network hardhat scripts/PriceTokenUsd.js",
+    "deploy": "yarn hardhat --network hardhat deploy"
   }
 }

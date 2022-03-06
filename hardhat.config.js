@@ -3,6 +3,7 @@ require("@nomiclabs/hardhat-ethers");
 require('@openzeppelin/hardhat-upgrades');
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-deploy');
+require('hardhat-deploy-ethers');
 require("solidity-coverage");
 require("hardhat-gas-reporter");
 require("dotenv").config();
@@ -42,5 +43,10 @@ module.exports = {
     enabled: true,
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-  }
+  },
+  namedAccounts: {
+    deployer: 0,
+    feeRecipient: 1,
+    user: 2,
+  },
 };

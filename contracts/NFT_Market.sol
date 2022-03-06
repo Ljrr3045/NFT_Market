@@ -118,6 +118,10 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         _setupRole("Admin", msg.sender);
         _setRoleAdmin("Owner", "Owner");
         _setRoleAdmin("Admin", "Owner");
+
+        constLink();
+        constEth();
+        
         feeAmount = 1;
         initContract = true;
     }

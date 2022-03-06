@@ -14,6 +14,9 @@ describe("ChainLinkFeed", async ()=> {
         link = await LINK.deploy();
 
         [deployer] = await ethers.getSigners();
+
+        await link.connect(deployer).constLink();
+        await eth.connect(deployer).constEth();
     });
 
     describe("Eth_Usd", async ()=> {
