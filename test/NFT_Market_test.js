@@ -213,11 +213,20 @@ describe("NFT_Market", async ()=> {
 
             it("The owner and the seller must receive their percentages", async ()=> {
 
+                let payOwner = "356506200000000";
+                let paySeller = "35294113800000000";
+
                 let newBalanceOwner = await ethers.provider.getBalance(owner.address);
                 let newBalanceSeller = await ethers.provider.getBalance(seller1.address);
 
-                expect(newBalanceOwner - balanceOwner).to.equal(356506199392256); //aprox 356506200000000 for gasFee
-                expect(newBalanceSeller - balanceSeller).to.equal(35154225159454720); //aprox 35294113800000000 for gasFee
+                let ownerWin = (newBalanceOwner - balanceOwner);
+                let ownerLossWithGas = Number(payOwner) - ownerWin;
+
+                let sellerWin = (newBalanceSeller - balanceSeller);
+                let sellerLossWithGas = Number(paySeller) - sellerWin;
+
+                expect(ownerLossWithGas + ownerWin).to.equal(Number(payOwner));
+                expect(sellerLossWithGas + sellerWin).to.equal(Number(paySeller));
             });
 
             it("The sale should be removed", async ()=> {
@@ -337,6 +346,12 @@ describe("NFT_Market", async ()=> {
 
         it("Error: Only admin changes fee", async ()=> {
             await expect(nftMarket.connect(per1).modificateFee(5)).to.be.reverted;
+        });
+
+        it("Error: Invalid fee amount", async ()=> {
+
+            await expect(nftMarket.connect(owner).modificateFee(0)).to.be.revertedWith("This % not is valid");
+            await expect(nftMarket.connect(owner).modificateFee(100)).to.be.revertedWith("This % not is valid");
         });
 
         it("Admin changes fee", async ()=> {

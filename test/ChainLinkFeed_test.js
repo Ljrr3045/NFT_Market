@@ -19,6 +19,12 @@ describe("ChainLinkFeed", async ()=> {
         await eth.connect(deployer).constEth();
     });
 
+    it("Error: Should not instantiate two times", async ()=> {
+
+        await expect(link.connect(deployer).constLink()).to.be.revertedWith("This contract are init");
+        await expect(eth.connect(deployer).constEth()).to.be.revertedWith("This contract are init");
+    });
+
     describe("Eth_Usd", async ()=> {
         it("For block 14316371, the price of ETH should be 2805$", async ()=> {
             expect(await eth.priceInTokenEth()).to.equal(2805);

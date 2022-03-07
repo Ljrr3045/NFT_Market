@@ -17,5 +17,4 @@ describe("UpDate Proxy", async()=> {
 
         expect(await nftMarketV2.upDate()).to.equal(true);
     });
-
 });

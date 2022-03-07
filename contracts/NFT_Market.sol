@@ -2,6 +2,12 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
+/**@title Contract for an NFT Marketplace
+  *@author ljrr3045
+  *@notice This contract is in charge of executing the functions corresponding to managing a 
+  marketplace for nft, which range from the sale to the purchase of nft
+*/
+
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,13 +21,19 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
     bool internal initContract;
     uint public feeAmount;
     uint internal _IdOfSale;
+    ///@dev variable necessary to control the contract
 
+//Enums and Mappins
+
+    ///@dev enum in charge of managing the payment method
     enum TipeERC {Dai, Link, Eth}
 
+    /**@dev The saleDate mappin is in charge of storing the data of each registered sale and 
+    the sellerAcount mappin is in charge of registering the sales registered by a person */
     mapping (uint => Data) public saleData;
     mapping (address => sellerRegist[]) public sellerAcount;
 
-//struc
+//Strucs
 
     struct Data {
         address seller;
@@ -41,7 +53,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         uint saleId;
     }
 
-//event
+//Events
 
     event selling (
         address _seller, 
@@ -67,8 +79,9 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         string _data
     );
 
-//modifier
+//Modifiers
 
+    ///@dev Modifier in charge of verifying if the time limit for a sale has expired
     modifier timeOfBuy(uint _saleID){
 
         if(block.timestamp > saleData[_saleID].deadline){
@@ -77,6 +90,8 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         _;
     }
 
+    /**@dev Modifier commissioned to know if a seller owns tokens and if he has enough tokens available to publish, 
+    preventing him from publishing sales without sufficient balance */
     modifier evitRepublication(address _tokenAdrress, uint _tokenId, uint _amountOfToken){
 
         uint tokensAvailable = IERC1155(_tokenAdrress).balanceOf(msg.sender, _tokenId);
@@ -95,6 +110,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         _;
     }
 
+    ///@dev Modifier to verify if the entered data is valid
     modifier confirmDates(address _tokenAdrress, uint _amountOfToken, uint _deadline,  uint _priceOfSale){
         require(_tokenAdrress != address(0), "Date is invalidid");
         require(_amountOfToken > 0, "Date is invalidid");
@@ -103,13 +119,15 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         _;
     }
 
+    ///@dev Modifier in charge to know if a sell order exists
     modifier saleExist(uint _saleID){
         require(saleData[_saleID].exist, "This order for sale no exist");
         _;
     }
 
-//function
+//Public functions
     
+    ///@notice constructor function to initialize the contract
     function cont() public {
         require (initContract == false, "This contract are init");
 
@@ -126,6 +144,11 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         initContract = true;
     }
 
+    /**@notice function in charge of registering a sale offer by a user, assigning a unique id for each 
+       sale and saving the data in their respective mappins
+      *@dev before executing it passes the data through the modifiers verifying that they are good and 
+       the seller has a sufficient balance of tokens
+    */
     function registTokenSale(
         address _tokenAdrress, 
         uint _tokenId, 
@@ -164,6 +187,11 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         emit selling(msg.sender,_IdOfSale,_tokenAdrress,_tokenId,_amountOfToken,_priceOfSale,"Posted sale");
     }
 
+    /**@notice Function in charge of carrying out the purchase of an offer accepted as a means of payment ETH, if the buyer 
+      exceeds the payment, the change will be returned and the corresponding fees will be paid to the owner and seller. 
+      *@dev The id of the sale must be passed as a parameter. In order for the token to be transferred, the seller must approve 
+       the NFT_Market to use their token first.
+    */
     function buyTokenWithEth (uint saleID) public payable saleExist(saleID) timeOfBuy(saleID){
 
         Data memory token = saleData[saleID];
@@ -189,6 +217,12 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         emit buying(msg.sender, token.saleId, token.seller, token.priceOfSale, "Bought with ETH");
     }
 
+    /**@notice Function in charge of carrying out the purchase of an offer accepted as a means of payment DAI OR LINK 
+      (the buyer must approve NFT_Market so that he can spend his ERC20 token) and the corresponding fees will be paid to 
+      the owner and seller. 
+      *@dev The id of the sale and the type of token with which it will pay must be passed as a parameter. In order for the 
+      token to be transferred, the seller must approve the NFT_Market to use their token first.
+    */
     function buyTokenWithERC20 (uint saleID, TipeERC _TipeERC) public saleExist(saleID) timeOfBuy(saleID){
 
         Data memory token = saleData[saleID];
@@ -238,6 +272,8 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         }
     }
 
+    ///@notice Function in charge of eliminating a sale offer
+    ///@dev only the owner of the sale can delete it
     function sellerDelateSale (uint saleID) public saleExist(saleID){
 
         Data memory token = saleData[saleID];
@@ -248,14 +284,17 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         emit canceling(msg.sender, saleID, "Sale canceled");
     }
 
+    ///@notice Function in charge of modifying the fee for the owner of the contract
+    ///@dev only the admin can modify the fees
     function modificateFee (uint newFee) public onlyRole("Admin"){
 
         require ( newFee > 0 && newFee < 100, "This % not is valid" );
         feeAmount = newFee;
     }
 
-//internal
+//Internal functions
 
+    ///@dev Function in charge of calculating the sale price of an offer in token or ETH
     function _calculateCostInToken(uint _priceToken, uint _priceSale, TipeERC _tipeERC) internal pure returns (uint){
 
         uint totalAmount;
@@ -269,16 +308,19 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
         return totalAmount;
     }
 
-    function _delateSale(uint idSale) internal {
-        delete saleData[idSale];
-    }
-
+    ///@dev Function in charge of calculating the amount of token or ETH that corresponds to the owner depending on the fee rate
     function _calculateFee(uint _amount) internal view returns(uint){
 
         uint payFee = (_amount * feeAmount)/100;
         return payFee;
     }
 
+    ///@dev Function responsible for removing an offer from the sales record
+    function _delateSale(uint idSale) internal {
+        delete saleData[idSale];
+    }
+
+    ///@dev Function responsible for removing an offer from the sales record of a particular user to avoid re-entries
     function _delateSellerAcount(uint _Id, address sellerAddress) internal {
 
         for(uint i = 0; i < sellerAcount[sellerAddress].length; i++){
