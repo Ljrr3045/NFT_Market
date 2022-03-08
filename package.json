@@ -3,7 +3,10 @@
     "@chainlink/contracts": "^0.4.0",
     "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "bootstrap": "^5.1.3",
     "hardhat": "^2.9.0",
+    "react-bootstrap": "^2.2.0",
+    "web3": "^1.7.1",
     "yarn": "^1.22.17"
   },
   "devDependencies": {
@@ -23,7 +26,7 @@
   "scripts": {
     "compile": "yarn hardhat compile",
     "test": " yarn hardhat test",
-    "coverage":" yarn hardhat coverage",
+    "coverage": " yarn hardhat coverage",
     "scriptDeployProxy": "yarn hardhat run --network hardhat scripts/NftMarketProxy.js",
     "scriptUpdate": "yarn hardhat run --network hardhat scripts/UpDateProxy.js",
     "scriptPriceToken": "yarn hardhat run --network hardhat scripts/PriceTokenUsd.js",
