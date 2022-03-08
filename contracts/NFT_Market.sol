@@ -11,6 +11,7 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./ChainLinkFeed/Eth_Usd.sol";
 import "./ChainLinkFeed/Dai_Usd.sol";
 import "./ChainLinkFeed/Link_Usd.sol";
@@ -139,6 +140,7 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
 
         constLink();
         constEth();
+        constDai();
         
         feeAmount = 1;
         initContract = true;
@@ -298,11 +300,13 @@ contract NFT_Market is AccessControlUpgradeable, Eth_Usd, Dai_Usd, Link_Usd {
     function _calculateCostInToken(uint _priceToken, uint _priceSale, TipeERC _tipeERC) internal pure returns (uint){
 
         uint totalAmount;
+        uint priceSaleFinal;
 
         if(_tipeERC == TipeERC.Eth){
             totalAmount = ((_priceSale * (10**8))/ _priceToken) * (10**10);
         }else{
-            totalAmount = _priceSale/_priceToken;
+            priceSaleFinal = _priceSale * 100;
+            totalAmount = Math.ceilDiv(priceSaleFinal, _priceToken);
         }
 
         return totalAmount;

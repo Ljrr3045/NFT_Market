@@ -259,7 +259,7 @@ describe("NFT_Market", async ()=> {
                         0
                     )).to.be.revertedWith("Dai/insufficient-allowance");
 
-                    await dai.connect(per2Dai).approve(nftMarket.address, 200);
+                    await dai.connect(per2Dai).approve(nftMarket.address, 102);
 
                     await expect(nftMarket.connect(per2Dai).
                         buyTokenWithERC20(
@@ -293,7 +293,7 @@ describe("NFT_Market", async ()=> {
                     let balanceSellerDai = await dai.connect(owner).balanceOf(per1.address);
                     let balanceOwnerDai = await dai.connect(owner).balanceOf(owner.address);
     
-                    expect(balanceSellerDai).to.equal(99);
+                    expect(balanceSellerDai).to.equal(101);
                     expect(balanceOwnerDai).to.equal(1);
                 }); 
             });

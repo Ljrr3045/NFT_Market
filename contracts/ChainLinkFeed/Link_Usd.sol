@@ -26,7 +26,7 @@ contract Link_Usd {
     function priceInTokenLink() public view returns(uint){
         uint tokenValue;
 
-        tokenValue = uint(_getLatestPriceLink()) / 100000000;
+        tokenValue = uint(_getLatestPriceLink()) / 1000000;
 
         return tokenValue;
     }

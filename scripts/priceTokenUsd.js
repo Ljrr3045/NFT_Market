@@ -9,8 +9,9 @@ async function main() {
   const LINK = await ethers.getContractFactory("Link_Usd");
   const link = await LINK.deploy();
 
-  await link.connect(deployer).constLink();
-  await eth.connect(deployer).constEth();
+  await link.constLink();
+  await eth.constEth();
+  await dai.constDai();
 
   let Eth = await eth.priceInTokenEth();
   let Dai = await dai.priceInTokenDai();
